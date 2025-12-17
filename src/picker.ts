@@ -236,7 +236,7 @@ async function runPixelPicker(params: RunPixelPickerParams): Promise<PixelPickRe
 
   if (process.platform === "darwin")
   {
-    const pickerExePath = join(environment.assetsPath, "pixel-picker-mac");
+    const pickerExePath = join(environment.assetsPath, "mac");
 
     try
     {
@@ -255,7 +255,7 @@ async function runPixelPicker(params: RunPixelPickerParams): Promise<PixelPickRe
       const isMissingExe = message.includes("ENOENT") || message.includes("not found");
       if (isMissingExe)
       {
-        throw new Error("Missing pixel-picker-mac helper. Run scripts/build-mac.sh and ensure assets/pixel-picker-mac is executable.");
+        throw new Error("Missing mac helper. Run scripts/build-mac.sh and ensure assets/mac is executable.");
       }
 
       throw error;
@@ -491,7 +491,7 @@ function formatPickerFailureMessage(
 
   const msg = params.message;
 
-  if (msg.includes("Missing pixel-picker-mac helper"))
+  if (msg.includes("Missing mac helper"))
   {
     return "Build the macOS helper: run scripts/build-mac.sh (on a Mac), then try again.";
   }
