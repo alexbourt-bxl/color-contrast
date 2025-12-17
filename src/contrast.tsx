@@ -1,184 +1,26 @@
-import { Action, ActionPanel, Clipboard, Detail, environment } from "@raycast/api";
-import Color from "colorjs.io";
+import { Action, ActionPanel, Clipboard, Detail } from "@raycast/api";
 import { useEffect, useMemo, useState } from "react";
 
-import { parsePickedColor } from "./color";
-import { computeApca } from "./contrastMetrics";
-import { buildResultsText } from "./contrastText";
 import { pickTwoPixelsWithResult } from "./picker";
-import { buildSwatchMarkdown } from "./swatchMarkdown";
 import { TagColors } from "./tagColors";
 import { getApcaScaleColorKey, getApcaScaleWord } from "./apcaScale";
 import { clearRememberedPick, loadRememberedPick, saveRememberedPick } from "./rememberedPick";
+import { useColorParsing } from "./useColorParsing";
+import { useContrastResults } from "./useContrastResults";
+import { useSwatchMarkdown } from "./useSwatchMarkdown";
+import type { TagItem } from "./types";
 
 export default function Command()
 {
-  type TagItem =
-  {
-    key: string;
-    text: string;
-    color?: string;
-  };
-
-  function normalizeHex6(hex: string): string
-  {
-    const trimmed = hex.trim();
-    if (trimmed.length === 4 && trimmed.startsWith("#"))
-    {
-      const r = trimmed[1];
-      const g = trimmed[2];
-      const b = trimmed[3];
-      return `#${r}${r}${g}${g}${b}${b}`;
-    }
-
-    return trimmed;
-  }
-
   const [foregroundHex, setForegroundHex] = useState("");
   const [backgroundHex, setBackgroundHex] = useState("");
   const [isPicking, setIsPicking] = useState(false);
  
-  const foreground = useMemo(() =>
-  {
-    const trimmed = foregroundHex.trim();
-    if (!trimmed)
-    {
-      return null;
-    }
- 
-    try
-    {
-      return parsePickedColor(trimmed);
-    }
-    catch
-    {
-      return null;
-    }
-  }, [foregroundHex]);
- 
-  const background = useMemo(() =>
-  {
-    const trimmed = backgroundHex.trim();
-    if (!trimmed)
-    {
-      return null;
-    }
- 
-    try
-    {
-      return parsePickedColor(trimmed);
-    }
-    catch
-    {
-      return null;
-    }
-  }, [backgroundHex]);
+  const foreground = useColorParsing(foregroundHex);
+  const background = useColorParsing(backgroundHex);
+  const results = useContrastResults(foreground, background);
 
-  const results = useMemo(() =>
-  {
-    if (!foreground || !background)
-    {
-      return null;
-    }
-
-    const wcagRatio = Color.contrast(background.hex, foreground.hex, "WCAG21");
-    const apca = computeApca(foreground.srgb8bit, background.srgb8bit);
-
-    return (
-    {
-      wcagRatio,
-      apca,
-    });
-  }, [foreground, background]);
-
-  const resultsText = buildResultsText(
-  {
-    foreground,
-    background,
-    results,
-  });
-
-  const swatchMarkdown = useMemo(() =>
-  {
-    if (!foreground && !background)
-    {
-      return "";
-    }
-
-    const isDark = environment.appearance === "dark";
-    const borderColor = isDark ? "#ffffff10" : "#00000008";
-
-    const placeholderFg = isDark ? "#b0b0b0" : "#6a6a6a";
-    const placeholderBg = isDark ? "#2a2a2a" : "#f2f2f2";
-
-    const fgHex = foreground ? normalizeHex6(foreground.hex) : placeholderFg;
-    const bgHex = background ? normalizeHex6(background.hex) : placeholderBg;
-
-    const fgText = foreground ? `FG ${fgHex}` : "Pick foreground";
-    const bgText = background ? `BG ${bgHex}` : "Pick background";
-
-    return buildSwatchMarkdown(
-    {
-      foregroundHex: fgHex,
-      backgroundHex: bgHex,
-      label: "Aa",
-      size: 140,
-      borderColor,
-      footerBadges:
-      {
-        foregroundHex: fgHex,
-        backgroundHex: bgHex,
-        foregroundText: fgText,
-        backgroundText: bgText,
-      },
-      width: 420,
-    });
-  }, [foreground, background]);
-
-  const disabledSwatchMarkdown = useMemo(() =>
-  {
-    if (foreground || background)
-    {
-      return "";
-    }
-
-    const isDark = environment.appearance === "dark";
-    const borderColor = isDark ? "#ffffff10" : "#00000010";
-    const fg = isDark ? "#b0b0b0" : "#6a6a6a";
-    const bg = isDark ? "#2a2a2a" : "#f2f2f2";
-
-    return buildSwatchMarkdown(
-    {
-      foregroundHex: fg,
-      backgroundHex: bg,
-      label: "Aa",
-      size: 140,
-      borderColor,
-      footerBadges:
-      {
-        foregroundHex: fg,
-        backgroundHex: bg,
-        foregroundText: "Pick foreground",
-        backgroundText: "Pick background",
-      },
-      width: 420,
-    });
-  }, [foreground, background]);
-
-  const detailMarkdown = useMemo(() =>
-  {
-    if (swatchMarkdown)
-    {
-      return swatchMarkdown;
-    }
-
-    if (disabledSwatchMarkdown)
-    {
-      return disabledSwatchMarkdown;
-    }
-
-    return resultsText;
-  }, [swatchMarkdown, disabledSwatchMarkdown, resultsText]);
+  const detailMarkdown = useSwatchMarkdown(foreground, background);
 
   useEffect(() =>
   {

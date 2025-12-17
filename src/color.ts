@@ -19,7 +19,7 @@ export function parsePickedColor(input: string): PickedColor
     hex: color.toString(
     {
       format: "hex",
-    }),
+    }).toUpperCase(),
     srgb8bit,
   });
 }

@@ -8,6 +8,7 @@ import { promisify } from "node:util";
 import { parsePickedColor } from "./color";
 
 import type { PixelPickResult } from "./types";
+import { isPixelPickResult, isPartialPixelPickResult } from "./types";
 
 let isPickInFlight = false;
 
@@ -17,16 +18,6 @@ export type PickStateSetters =
   setForegroundHex: (value: string) => void;
   setBackgroundHex: (value: string) => void;
 };
-
-export async function pickTwoPixels(setters: PickStateSetters): Promise<void>
-{
-  if (setters)
-  {
-    // keep signature stable
-  }
-
-  await pickTwoPixelsWithResult(setters);
-}
 
 export async function pickTwoPixelsWithResult(setters: PickStateSetters): Promise<PixelPickResult | null>
 {
@@ -199,7 +190,7 @@ function parseTwoColorsFromText(text: string):
     }
     catch
     {
-      // ignore
+      // Skip invalid color strings; we'll validate we have at least 2 valid colors below
     }
   }
 
@@ -325,7 +316,25 @@ function parsePixelPickerJson(stdout: string): PixelPickResult
     throw new Error(`Pixel picker returned invalid JSON: ${trimmed}`);
   }
 
-  return parsed as PixelPickResult;
+  if (!isPixelPickResult(parsed))
+  {
+    throw new Error(`Pixel picker returned invalid result structure: ${trimmed}`);
+  }
+
+  // Normalize hex values to uppercase
+  return (
+  {
+    foreground:
+    {
+      ...parsed.foreground,
+      hex: parsed.foreground.hex.toUpperCase(),
+    },
+    background:
+    {
+      ...parsed.background,
+      hex: parsed.background.hex.toUpperCase(),
+    },
+  });
 }
 
 async function runPixelPickerExeStreaming(
@@ -367,7 +376,7 @@ async function runPixelPickerExeStreaming(
       }
       catch
       {
-        // ignore
+        // Fallback: if file read fails, we'll wait for stdout or handle error in close handler
       }
     };
 
@@ -389,13 +398,33 @@ async function runPixelPickerExeStreaming(
         return;
       }
 
-      const progress = parsed as Partial<PixelPickResult>;
-      params.onProgress?.(progress);
+      if (!isPartialPixelPickResult(parsed))
+      {
+        return;
+      }
 
-      if (progress.foreground?.hex && progress.background?.hex)
+      // Normalize hex values to uppercase
+      const normalizedProgress: Partial<PixelPickResult> =
+      {
+        ...parsed,
+        foreground: parsed.foreground ? (
+        {
+          ...parsed.foreground,
+          hex: parsed.foreground.hex.toUpperCase(),
+        }) : undefined,
+        background: parsed.background ? (
+        {
+          ...parsed.background,
+          hex: parsed.background.hex.toUpperCase(),
+        }) : undefined,
+      };
+
+      params.onProgress?.(normalizedProgress);
+
+      if (normalizedProgress.foreground?.hex && normalizedProgress.background?.hex && isPixelPickResult(normalizedProgress))
       {
         resolved = true;
-        resolve(progress as PixelPickResult);
+        resolve(normalizedProgress);
       }
     };
 
