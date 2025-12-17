@@ -258,7 +258,7 @@ func screenshotMainDisplay(rect: CGRect) async throws -> CGImage?
     return nil
   }
 
-  let excludingApps: [SCApplication] =
+  let excludingApps: [SCRunningApplication] =
   [
   ]
 
