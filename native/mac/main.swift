@@ -244,9 +244,9 @@ func globalPointFromMouseLocation() -> CGPoint
 
 func readPixelColorAtGlobalPoint(_ point: CGPoint) -> NSColor?
 {
-  guard let image = CGDisplayCreateImageForRect(
+  guard let image = CGDisplayCreateImage(
     CGMainDisplayID(),
-    CGRect(x: point.x, y: point.y, width: 1, height: 1)
+    rect: CGRect(x: point.x, y: point.y, width: 1, height: 1)
   )
   else
   {
@@ -268,7 +268,7 @@ func captureMagnifiedImageAtGlobalPoint(_ point: CGPoint) -> NSImage?
     height: CGFloat(sampleSize)
   )
 
-  guard let cgImage = CGDisplayCreateImageForRect(CGMainDisplayID(), src)
+  guard let cgImage = CGDisplayCreateImage(CGMainDisplayID(), rect: src)
   else
   {
     return nil
