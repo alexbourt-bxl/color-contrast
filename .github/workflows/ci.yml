@@ -36,11 +36,13 @@ jobs:
           persist-credentials: true
 
       - name: Build macOS pixel picker helper
-        run: chmod +x scripts/build-mac.sh && scripts/build-mac.sh
+        run: bash scripts/build-mac.sh
 
       - name: Commit updated mac helper binary
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
+          git pull --rebase --autostash
+
           git add assets/mac
 
           if [ -z "$(git status --porcelain -- assets/mac)" ]; then
@@ -51,7 +53,6 @@ jobs:
           git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" \
             commit -m "chore: update mac helper binary"
 
-          git pull --rebase
           git push
 
       - name: Upload macOS pixel picker helper
