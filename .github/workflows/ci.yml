@@ -32,6 +32,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
       - name: Build macOS pixel picker helper
         run: chmod +x scripts/build-mac.sh && scripts/build-mac.sh
@@ -39,18 +41,15 @@ jobs:
       - name: Commit updated mac helper binary
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          git status --porcelain
+          git add assets/mac
 
-          if git diff --quiet --exit-code -- assets/mac; then
+          if [ -z "$(git status --porcelain -- assets/mac)" ]; then
             echo "assets/mac unchanged; skipping commit."
             exit 0
           fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git add assets/mac
-          git commit -m "chore: update mac helper binary"
+          git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" \
+            commit -m "chore: update mac helper binary"
 
           git pull --rebase
           git push
