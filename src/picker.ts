@@ -1,9 +1,8 @@
 import { Clipboard, environment, showToast, Toast } from "@raycast/api";
 
-import { execFile, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { promisify } from "node:util";
 
 import { parsePickedColor } from "./color";
 
@@ -212,8 +211,6 @@ type RunPixelPickerParams =
   onProgress?: (progress: Partial<PixelPickResult>) => void;
 };
 
-const execFileAsync = promisify(execFile);
-
 async function runPixelPicker(params: RunPixelPickerParams): Promise<PixelPickResult>
 {
   const outFilePath = join(environment.supportPath, `pixel-picker-result-${Date.now()}.json`);
@@ -253,7 +250,6 @@ async function runPixelPicker(params: RunPixelPickerParams): Promise<PixelPickRe
     }
   }
 
-  const pickerScriptPath = join(environment.assetsPath, "win.ps1");
   const pickerExePath = join(environment.assetsPath, "win.exe");
 
   try
@@ -271,31 +267,13 @@ async function runPixelPicker(params: RunPixelPickerParams): Promise<PixelPickRe
   {
     const message = String(error);
     const isMissingExe = message.includes("ENOENT") || message.includes("not found");
-    if (!isMissingExe)
+    if (isMissingExe)
     {
-      throw error;
+      throw new Error("Missing win.exe helper. Ensure assets/win.exe exists.");
     }
+
+    throw error;
   }
-
-  const psArgs =
-  [
-    "-NoProfile",
-    "-ExecutionPolicy",
-    "Bypass",
-    "-File",
-    pickerScriptPath,
-    "-TimeoutMs",
-    String(params.timeoutMs),
-  ];
-
-  const { stdout } = await execFileAsync("powershell.exe", psArgs,
-  {
-    windowsHide: true,
-    timeout: params.timeoutMs + 5000,
-    maxBuffer: 1024 * 1024,
-  });
-
-  return parsePixelPickerJson(stdout);
 }
 
 function parsePixelPickerJson(stdout: string): PixelPickResult
