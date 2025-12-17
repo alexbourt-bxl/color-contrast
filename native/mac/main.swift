@@ -1,5 +1,6 @@
 import Cocoa
 import Foundation
+import ScreenCaptureKit
 
 enum ExitCode
 {
@@ -242,12 +243,75 @@ func globalPointFromMouseLocation() -> CGPoint
   return CGPoint(x: mouse.x, y: y)
 }
 
+@available(macOS 12.3, *)
+func screenshotMainDisplay(rect: CGRect) async throws -> CGImage?
+{
+  let shareable = try await SCShareableContent.current
+
+  let mainID = CGMainDisplayID()
+  guard let display = shareable.displays.first(where:
+  {
+    $0.displayID == mainID
+  })
+  else
+  {
+    return nil
+  }
+
+  let excludingApps: [SCApplication] =
+  [
+  ]
+
+  let exceptingWindows: [SCWindow] =
+  [
+  ]
+
+  let filter = SCContentFilter(
+    display: display,
+    excludingApplications: excludingApps,
+    exceptingWindows: exceptingWindows
+  )
+
+  let config = SCStreamConfiguration()
+  let src = rect.integral
+  config.sourceRect = src
+  config.width = max(1, Int(src.width))
+  config.height = max(1, Int(src.height))
+
+  return try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
+}
+
+func captureMainDisplayImage(rect: CGRect) -> CGImage?
+{
+  if #available(macOS 12.3, *)
+  {
+    let semaphore = DispatchSemaphore(value: 0)
+    var image: CGImage? = nil
+
+    Task
+    {
+      do
+      {
+        image = try await screenshotMainDisplay(rect: rect)
+      }
+      catch
+      {
+        image = nil
+      }
+
+      semaphore.signal()
+    }
+
+    semaphore.wait()
+    return image
+  }
+
+  return nil
+}
+
 func readPixelColorAtGlobalPoint(_ point: CGPoint) -> NSColor?
 {
-  guard let image = CGDisplayCreateImage(
-    CGMainDisplayID(),
-    rect: CGRect(x: point.x, y: point.y, width: 1, height: 1)
-  )
+  guard let image = captureMainDisplayImage(rect: CGRect(x: point.x, y: point.y, width: 1, height: 1))
   else
   {
     return nil
@@ -268,7 +332,7 @@ func captureMagnifiedImageAtGlobalPoint(_ point: CGPoint) -> NSImage?
     height: CGFloat(sampleSize)
   )
 
-  guard let cgImage = CGDisplayCreateImage(CGMainDisplayID(), rect: src)
+  guard let cgImage = captureMainDisplayImage(rect: src)
   else
   {
     return nil
