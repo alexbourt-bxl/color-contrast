@@ -4,22 +4,16 @@ import { parsePickedColor } from "./color";
 
 import type { PickedColor } from "./types";
 
-export function useColorParsing(hex: string): PickedColor | null
-{
-  return useMemo(() =>
-  {
+export function useColorParsing(hex: string): PickedColor | null {
+  return useMemo(() => {
     const trimmed = hex.trim();
-    if (!trimmed)
-    {
+    if (!trimmed) {
       return null;
     }
 
-    try
-    {
+    try {
       return parsePickedColor(trimmed);
-    }
-    catch
-    {
+    } catch {
       return null;
     }
   }, [hex]);

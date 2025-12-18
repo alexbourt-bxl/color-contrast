@@ -1,12 +1,10 @@
 import { Color } from "@raycast/api";
 
-export const TagColors =
-{
+export const TagColors = {
   pass: Color.Green,
   fail: Color.Red,
 
-  apca:
-  {
+  apca: {
     red: Color.Red,
     orange: Color.Orange,
     yellow: Color.Yellow,

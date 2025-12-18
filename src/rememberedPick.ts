@@ -4,30 +4,23 @@ import type { PixelPickResult } from "./types";
 
 const key = "rememberedPick";
 
-export async function loadRememberedPick(): Promise<PixelPickResult | null>
-{
+export async function loadRememberedPick(): Promise<PixelPickResult | null> {
   const raw = await LocalStorage.getItem<string>(key);
-  if (!raw)
-  {
+  if (!raw) {
     return null;
   }
 
-  try
-  {
+  try {
     return JSON.parse(raw) as PixelPickResult;
-  }
-  catch
-  {
+  } catch {
     return null;
   }
 }
 
-export async function saveRememberedPick(value: PixelPickResult): Promise<void>
-{
+export async function saveRememberedPick(value: PixelPickResult): Promise<void> {
   await LocalStorage.setItem(key, JSON.stringify(value));
 }
 
-export async function clearRememberedPick(): Promise<void>
-{
+export async function clearRememberedPick(): Promise<void> {
   await LocalStorage.removeItem(key);
 }

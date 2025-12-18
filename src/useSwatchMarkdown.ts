@@ -6,29 +6,21 @@ import { normalizeHex6 } from "./colorUtils";
 
 import type { PickedColor } from "./types";
 
-export function useSwatchMarkdown(
-  foreground: PickedColor | null,
-  background: PickedColor | null
-): string
-{
-  return useMemo(() =>
-  {
+export function useSwatchMarkdown(foreground: PickedColor | null, background: PickedColor | null): string {
+  return useMemo(() => {
     const isDark = environment.appearance === "dark";
     const placeholderFg = isDark ? "#b0b0b0" : "#6a6a6a";
     const placeholderBg = isDark ? "#2a2a2a" : "#f2f2f2";
 
-    if (!foreground && !background)
-    {
+    if (!foreground && !background) {
       const borderColor = isDark ? "#ffffff10" : "#00000010";
-      return buildSwatchMarkdown(
-      {
+      return buildSwatchMarkdown({
         foregroundHex: placeholderFg,
         backgroundHex: placeholderBg,
         label: "Aa",
         size: 140,
         borderColor,
-        footerBadges:
-        {
+        footerBadges: {
           foregroundHex: placeholderFg,
           backgroundHex: placeholderBg,
           foregroundText: "Pick foreground",
@@ -45,15 +37,13 @@ export function useSwatchMarkdown(
     const fgText = foreground ? `${fgHex}` : "Pick foreground";
     const bgText = background ? `${bgHex}` : "Pick background";
 
-    return buildSwatchMarkdown(
-    {
+    return buildSwatchMarkdown({
       foregroundHex: fgHex,
       backgroundHex: bgHex,
       label: "Aa",
       size: 140,
       borderColor,
-      footerBadges:
-      {
+      footerBadges: {
         foregroundHex: fgHex,
         backgroundHex: bgHex,
         foregroundText: fgText,
